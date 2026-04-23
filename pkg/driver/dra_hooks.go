@@ -84,6 +84,8 @@ func (cp *CPUDriver) createGroupedCPUDeviceSlices() [][]resourceapi.Device {
 				"dra.cpu/socketID":   {IntValue: ptr.To(int64(socketID))},
 				"dra.cpu/numCPUs":    {IntValue: ptr.To(availableCPUsInSocket)},
 				"dra.cpu/smtEnabled": {BoolValue: ptr.To(cp.cpuTopology.SMTEnabled)},
+				// Standardized topology attributes
+				"resource.kubernetes.io/cpuSocketID": {IntValue: ptr.To(int64(socketID))},
 			}
 
 			devices = append(devices, resourceapi.Device{
@@ -120,6 +122,9 @@ func (cp *CPUDriver) createGroupedCPUDeviceSlices() [][]resourceapi.Device {
 				"dra.cpu/socketID":   {IntValue: ptr.To(socketID)},
 				"dra.cpu/smtEnabled": {BoolValue: ptr.To(cp.cpuTopology.SMTEnabled)},
 				"dra.cpu/numCPUs":    {IntValue: ptr.To(availableCPUsInNUMANode)},
+				// Standardized topology attributes
+				"resource.kubernetes.io/numaNode":    {IntValue: ptr.To(int64(numaID))},
+				"resource.kubernetes.io/cpuSocketID": {IntValue: ptr.To(socketID)},
 			}
 			device.SetCompatibilityAttributes(deviceAttrs, int64(numaID))
 
