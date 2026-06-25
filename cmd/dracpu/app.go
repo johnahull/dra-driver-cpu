@@ -53,6 +53,7 @@ var (
 	ready            atomic.Bool
 	cpuDeviceMode    string
 	groupBy          string
+	numaListEnabled  bool
 )
 
 type cpuDeviceModeValue struct {
@@ -110,6 +111,7 @@ func init() {
 	flag.StringVar(&reservedCPUs, "reserved-cpus", "", "cpuset of CPUs to be excluded from ResourceSlice.")
 	flag.Var(newCPUDeviceModeValue(&cpuDeviceMode, driver.CPU_DEVICE_MODE_GROUPED), "cpu-device-mode", "Sets the mode for exposing CPU devices. 'grouped' exposes a single device per socket or numa node (based on --group-by). 'individual' exposes each CPU as a separate device.")
 	flag.Var(newGroupByValue(&groupBy, driver.GROUP_BY_NUMA_NODE), "group-by", "When --cpu-device-mode=grouped, sets the criteria for grouping CPUs. Can be set to 'socket' or 'numanode'.")
+	flag.BoolVar(&numaListEnabled, "numa-list", true, "Publish numaNode as SLIT-based list (true) or scalar (false)")
 }
 
 func main() {
@@ -218,6 +220,7 @@ func run(logger logr.Logger) error {
 		ReservedCPUs:     reservedCPUSet,
 		CpuDeviceMode:    cpuDeviceMode,
 		CPUDeviceGroupBy: groupBy,
+		NUMAListEnabled:  numaListEnabled,
 	}
 	dracpu, asyncErr, err := driver.Start(ctx, clientset, driverConfig)
 	if err != nil {

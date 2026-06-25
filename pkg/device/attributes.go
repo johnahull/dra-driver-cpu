@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	resourceapi "k8s.io/api/resource/v1"
+	"k8s.io/dynamic-resource-allocation/deviceattribute"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/ptr"
 )
@@ -32,9 +33,12 @@ import (
 // SetCompatibilityAttributes add attributes to enable compatibility (e.g. alignment) with other
 // DRA resource drivers leveraging attributes which are not kubernetes standard.
 // This is the "staging area" which enables attribute sharing until (or before) they become standard.
-func SetCompatibilityAttributes(attrs map[resourceapi.QualifiedName]resourceapi.DeviceAttribute, numaID int64) {
+func SetCompatibilityAttributes(attrs map[resourceapi.QualifiedName]resourceapi.DeviceAttribute, numaID int64, numaListEnabled bool) {
 	attrs["dra.net/numaNode"] = resourceapi.DeviceAttribute{IntValue: ptr.To(numaID)}
-	attrs["resource.kubernetes.io/numaNode"] = resourceapi.DeviceAttribute{IntValue: ptr.To(numaID)}
+	numaAttr, err := deviceattribute.GetNUMANodeAttribute(int(numaID), numaListEnabled)
+	if err == nil {
+		attrs[numaAttr.Name] = numaAttr.Value
+	}
 
 	pcieRoots, err := GetPCIeRootsForNUMANode(int(numaID))
 	if err != nil {

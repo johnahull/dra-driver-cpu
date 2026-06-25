@@ -91,6 +91,7 @@ type CPUDriver struct {
 	cpuDeviceMode          string
 	cpuDeviceGroupBy       string
 	claimTracker           *store.ClaimTracker
+	numaListEnabled        bool
 }
 
 // Config is the configuration for the CPUDriver.
@@ -100,6 +101,7 @@ type Config struct {
 	ReservedCPUs     cpuset.CPUSet
 	CpuDeviceMode    string
 	CPUDeviceGroupBy string
+	NUMAListEnabled  bool
 }
 
 // Start creates and starts a new CPUDriver.
@@ -115,6 +117,7 @@ func Start(ctx context.Context, clientset kubernetes.Interface, config *Config) 
 		reservedCPUs:           config.ReservedCPUs,
 		cpuDeviceMode:          config.CpuDeviceMode,
 		cpuDeviceGroupBy:       config.CPUDeviceGroupBy,
+		numaListEnabled:        config.NUMAListEnabled,
 		claimTracker:           store.NewClaimTracker(),
 	}
 	cpuInfoProvider := cpuinfo.NewSystemCPUInfo()

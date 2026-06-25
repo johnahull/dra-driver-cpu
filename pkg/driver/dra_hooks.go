@@ -32,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/dynamic-resource-allocation/deviceattribute"
 	"k8s.io/dynamic-resource-allocation/kubeletplugin"
 	"k8s.io/dynamic-resource-allocation/resourceslice"
 	"k8s.io/klog/v2"
@@ -119,15 +120,17 @@ func (cp *CPUDriver) createGroupedCPUDeviceSlices(logger logr.Logger) [][]resour
 			cp.deviceNameToNUMANodeID[deviceName] = numaID
 
 			deviceAttrs := map[resourceapi.QualifiedName]resourceapi.DeviceAttribute{
-				"dra.cpu/numaNodeID": {IntValue: ptr.To(int64(numaID))},
-				"dra.cpu/socketID":   {IntValue: ptr.To(socketID)},
-				"dra.cpu/smtEnabled": {BoolValue: ptr.To(cp.cpuTopology.SMTEnabled)},
-				"dra.cpu/numCPUs":    {IntValue: ptr.To(availableCPUsInNUMANode)},
-				// Standardized topology attributes
-				"resource.kubernetes.io/numaNode":    {IntValue: ptr.To(int64(numaID))},
+				"dra.cpu/numaNodeID":                 {IntValue: ptr.To(int64(numaID))},
+				"dra.cpu/socketID":                   {IntValue: ptr.To(socketID)},
+				"dra.cpu/smtEnabled":                 {BoolValue: ptr.To(cp.cpuTopology.SMTEnabled)},
+				"dra.cpu/numCPUs":                    {IntValue: ptr.To(availableCPUsInNUMANode)},
 				"resource.kubernetes.io/cpuSocketID": {IntValue: ptr.To(socketID)},
 			}
-			device.SetCompatibilityAttributes(deviceAttrs, int64(numaID))
+			numaAttr, err := deviceattribute.GetNUMANodeAttribute(numaID, cp.numaListEnabled)
+			if err == nil {
+				deviceAttrs[numaAttr.Name] = numaAttr.Value
+			}
+			device.SetCompatibilityAttributes(deviceAttrs, int64(numaID), cp.numaListEnabled)
 
 			devices = append(devices, resourceapi.Device{
 				Name:                     deviceName,
@@ -205,7 +208,7 @@ func (cp *CPUDriver) createCPUDeviceSlices() [][]resourceapi.Device {
 				"dra.cpu/coreID":     {IntValue: ptr.To(int64(cpu.CoreID))},
 				"dra.cpu/cpuID":      {IntValue: ptr.To(int64(cpu.CpuID))},
 			}
-			device.SetCompatibilityAttributes(deviceAttrs, int64(cpu.NUMANodeID))
+			device.SetCompatibilityAttributes(deviceAttrs, int64(cpu.NUMANodeID), cp.numaListEnabled)
 
 			deviceName := fmt.Sprintf("%s%03d", cpuDevicePrefix, devId)
 			devId++
